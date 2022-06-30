@@ -5,4 +5,5 @@ import lombok.Data;
 @Data
 public class Verified {
 	private Boolean verified;
+	private String reason;
 }

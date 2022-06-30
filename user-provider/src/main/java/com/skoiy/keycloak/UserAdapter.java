@@ -50,22 +50,22 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
 
     @Override
     public String getFirstName() {
-        return user.getFirstName();
+        return user.getFirstname();
     }
 
     @Override
     public void setFirstName(String firstName) {
-        user.setFirstName(firstName);
+        user.setFirstname(firstName);
     }
 
     @Override
     public String getLastName() {
-        return user.getLastName();
+        return user.getLastname();
     }
 
     @Override
     public void setLastName(String lastName) {
-        user.setLastName(lastName);
+        user.setLastname(lastName);
     }
 
     @Override

@@ -1,10 +1,5 @@
 package com.skoiy.keycloak;
 
-//import com.skoiy.external.CredentialData;
-//import com.skoiy.external.Peanut;
-//import com.skoiy.external.PeanutsClient;
-//import com.skoiy.external.PeanutsClientSimpleHttp;
-
 import at.favre.lib.crypto.bcrypt.BCrypt;
 import com.skoiy.keycloak.external.CredentialData;
 import com.skoiy.keycloak.external.User;
@@ -22,6 +17,7 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
+import org.keycloak.storage.user.UserRegistrationProvider;
 
 import javax.ws.rs.WebApplicationException;
 import java.util.HashMap;
@@ -36,7 +32,7 @@ import java.util.stream.Stream;
 @Slf4j
 public class PeanutsUserProvider implements UserStorageProvider,
 	UserLookupProvider.Streams, UserQueryProvider.Streams,
-	CredentialInputUpdater, CredentialInputValidator {
+	CredentialInputUpdater, CredentialInputValidator, UserRegistrationProvider {
 
 	private final KeycloakSession session;
 	private final ComponentModel model;
@@ -94,10 +90,6 @@ public class PeanutsUserProvider implements UserStorageProvider,
 		Boolean isValid = verified.getVerified();
 //        boolean isValid = passwordHashProvider.verify(cred.getChallengeResponse(), passwordCredentialModel);
 
-		String password = "1234567";
-		String hash = "$2y$10$1/xlmIBAoz1SMgMTyAtr8eKhE33Truhg/t5xjic6VXclhgfEINv4i";
-		BCrypt.Result result = BCrypt.verifyer().verify(password.toCharArray(), hash);
-		System.out.println(result.verified);
 		log.info("Password validation result: {}", isValid);
 		return isValid;
 	}
@@ -170,12 +162,13 @@ public class PeanutsUserProvider implements UserStorageProvider,
 
 	@Override
 	public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params, Integer firstResult, Integer maxResults) {
+		// When clicking in the "View all users" button without any filter
 		log.info("searchForUserStream2, params={}, first={}, max={}", params, firstResult, maxResults);
 		return toUserModelStream(client.getUsers(null, firstResult, maxResults), realm);
 	}
 
 	private Stream<UserModel> toUserModelStream(List<User> users, RealmModel realm) {
-		log.debug("Received {} users from provider", users.size());
+		log.info("Received {} users from provider", users.size());
 		return users.stream().map(user -> new UserAdapter(session, realm, model, user));
 	}
 
@@ -187,5 +180,17 @@ public class PeanutsUserProvider implements UserStorageProvider,
 	@Override
 	public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
 		return Stream.empty();
+	}
+
+	@Override
+	public UserModel addUser(RealmModel realm, String username) {
+		log.info("addUser, realm {} username {}", realm, username);
+		return null;
+	}
+
+	@Override
+	public boolean removeUser(RealmModel realm, UserModel user) {
+		log.info("removeUser, realm {} username {}", realm, user.getUsername());
+		return false;
 	}
 }

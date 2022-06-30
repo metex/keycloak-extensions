@@ -53,7 +53,7 @@ public class UsersClientSimpleHttp implements UsersClient {
     @Override
     @SneakyThrows
     public User getUserById(String id) {
-        String url = String.format("%s/%s", baseUrl, id);
+        String url = String.format("%s/%s?filter=email", baseUrl, id);
         SimpleHttp.Response response = SimpleHttp.doGet(url, httpClient).asResponse();
         if (response.getStatus() == 404) {
             throw new WebApplicationException(response.getStatus());
