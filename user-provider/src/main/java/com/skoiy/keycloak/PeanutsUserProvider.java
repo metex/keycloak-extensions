@@ -112,26 +112,28 @@ public class PeanutsUserProvider implements UserStorageProvider,
 	@Override
 	public UserModel getUserById(RealmModel realm, String id) {
 		log.info("getUserById: {}", id);
-		return findUser(realm, StorageId.externalId(id));
+		return findUser(realm, StorageId.externalId(id), "id_user");
 	}
 
 	@Override
 	public UserModel getUserByUsername(RealmModel realm, String username) {
 		log.info("getUserByUsername: {}", username);
-		return findUser(realm, username);
+		return findUser(realm, username, "email");
 	}
 
 	@Override
 	public UserModel getUserByEmail(RealmModel realm, String email) {
 		log.info("getUserByEmail: {}", email);
-		return findUser(realm, email);
+		return findUser(realm, email, "email");
 	}
 
-	private UserModel findUser(RealmModel realm, String identifier) {
+	private UserModel findUser(RealmModel realm, String identifier, String filterBy) {
 		UserModel adapter = loadedUsers.get(identifier);
 		if (adapter == null) {
 			try {
-				User user = client.getUserById(identifier);
+				// TODO user cache
+				session.userCache();
+				User user = client.getUserById(identifier, filterBy);
 				adapter = new UserAdapter(session, realm, model, user);
 				loadedUsers.put(identifier, adapter);
 			} catch (WebApplicationException e) {

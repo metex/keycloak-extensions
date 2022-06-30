@@ -12,59 +12,47 @@
 	</parent>
 
 	<artifactId>user-provider</artifactId>
-	<version>1.0</version>
+	<version>1.0-SNAPSHOT</version>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-core</artifactId>
-			<scope>provided</scope>
-			<version>${keycloak.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-server-spi</artifactId>
-			<scope>provided</scope>
-			<version>${keycloak.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-server-spi-private</artifactId>
-			<scope>provided</scope>
-			<version>${keycloak.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-services</artifactId>
-			<scope>provided</scope>
-			<version>${keycloak.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
-			<scope>provided</scope>
-			<version>1.7.36</version>
 		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
-			<scope>provided</scope>
-			<version>5.8.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-params</artifactId>
-			<scope>provided</scope>
-			<version>5.8.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>junit-jupiter</artifactId>
+			<version>1.17.2</version>
 		</dependency>
 		<dependency>
 			<groupId>com.github.dasniko</groupId>
 			<artifactId>testcontainers-keycloak</artifactId>
-		</dependency>
+            <version>2.2.2</version>
+        </dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
@@ -90,5 +78,22 @@
 			<version>0.9.0</version>
 		</dependency>
 	</dependencies>
+
+	<build>
+		<finalName>${project.groupId}-${project.artifactId}</finalName>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<configuration>
+					<artifactSet>
+						<includes>
+							<include>org.jboss.resteasy:resteasy-client*</include>
+						</includes>
+					</artifactSet>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 
 </project>

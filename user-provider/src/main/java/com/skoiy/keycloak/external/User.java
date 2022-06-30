@@ -24,7 +24,11 @@ public class User {
 //	private List<String> roles;
 
 	public String getUsername() {
-		return this.username;
+		return this.email;
+	}
+
+	public String getId_user() {
+		return Integer.toString(this.id_user);
 	}
 
 }

@@ -20,7 +20,7 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
     public UserAdapter(KeycloakSession session, RealmModel realm, ComponentModel model, User user) {
         super(session, realm, model);
         this.user = user;
-        this.keycloakId = StorageId.keycloakId(model, user.getUsername());
+        this.keycloakId = StorageId.keycloakId(model, user.getId_user());
     }
 
     @Override
@@ -43,7 +43,12 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
         return user.getEmail();
     }
 
-    @Override
+		@Override
+		public boolean isEmailVerified() {
+		return user.getVerified();
+	}
+
+		@Override
     public void setEmail(String email) {
         user.setEmail(email);
     }
@@ -73,6 +78,7 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
         MultivaluedHashMap<String, String> attributes = new MultivaluedHashMap<>();
         attributes.add(UserModel.USERNAME, getUsername());
         attributes.add(UserModel.EMAIL, getEmail());
+        attributes.add(UserModel.EMAIL_VERIFIED, Boolean.toString(isEmailVerified()));
         attributes.add(UserModel.FIRST_NAME, getFirstName());
         attributes.add(UserModel.LAST_NAME, getLastName());
         attributes.add("birthday", user.getBirthday());

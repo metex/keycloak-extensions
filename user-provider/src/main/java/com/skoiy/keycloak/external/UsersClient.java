@@ -16,7 +16,7 @@ public interface UsersClient {
 
 	@GET
 	@Path("/{id}")
-	User getUserById(@PathParam("id") String identifier);
+	User getUserById(@PathParam("id") String identifier, String filterBy);
 
 	@GET
 	@Path("/{id}/credentials")
