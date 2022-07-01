@@ -65,7 +65,7 @@ public class UsersClientSimpleHttp implements UsersClient {
     @Override
     @SneakyThrows
     public CredentialData getCredentialData(String id) {
-        String url = String.format("%s/%s/credentials", baseUrl, id);
+        String url = String.format("%s/user/%s/credentials", baseUrl, id);
         SimpleHttp.Response response = SimpleHttp.doGet(url, httpClient).asResponse();
         if (response.getStatus() == 404) {
             throw new WebApplicationException(response.getStatus());
@@ -75,12 +75,16 @@ public class UsersClientSimpleHttp implements UsersClient {
 
     @Override
     @SneakyThrows
-    public Verified validateCredentials(String id, String password) {
+    public Verified validateCredentials(String email, String pass) {
         String url = String.format("%s/validate", baseUrl);
+				Object obj = new Object() {
+					public final String username = email;
+					public final String password = pass;
+				};
         SimpleHttp.Response response = SimpleHttp.doPost(url, httpClient)
-                .param("username", id)
-                .param("password", password)
-                .asResponse();
+					.acceptJson()
+					.json(obj)
+					.asResponse();
         if (response.getStatus() == 404) {
             throw new WebApplicationException(response.getStatus());
         }

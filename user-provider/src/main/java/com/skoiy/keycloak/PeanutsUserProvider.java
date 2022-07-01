@@ -78,17 +78,30 @@ public class PeanutsUserProvider implements UserStorageProvider,
 			return false;
 		}
 
+		String plainPassword = input.getChallengeResponse();
+		//log.info("PLAIN PASSWORD {} ",input.getChallengeResponse());
 		UserCredentialModel cred = (UserCredentialModel) input;
-
+		//log.info("PLAIN PASSWORD {} ", cred.getValue());
 		PasswordCredentialModel passwordCredentialModel = credentialData.toPasswordCredentialModel();
+		// log.info("PLAIN PASSWORD {} ", passwordCredentialModel.getSecretData()); // its the {"value":"$2y$10$1/xlmIBAoz1SMgMTyAtr8eKhE33Truhg/t5xjic6VXclhgfEINv4i","salt":"salt","additionalParameters":{}}
+
 		PasswordHashProvider passwordHashProvider = session.getProvider(PasswordHashProvider.class, credentialData.getAlgorithm());
 
-		// Make a HTTP request to validate the data
+		// Make an HTTP request to validate the data
 		String resource = this.session.getContext().getClient().getClientId();
 		log.info("CLIENT ID {} ", resource);
-		Verified verified = client.validateCredentials(user.getUsername(), passwordCredentialModel.getPasswordSecretData().getValue());
+		log.info("USERNAME {} ", user.getUsername());
+		log.info("PASSWORD {} ", passwordCredentialModel.getPasswordSecretData().getValue());
+		String hashedPassword = passwordCredentialModel.getPasswordSecretData().getValue(); // retrieved from from the {"value":"$2y$10$1/xlmIBAoz1SMgMTyAtr8eKhE33Truhg/t5xjic6VXclhgfEINv4i","salt":"salt","additionalParameters":{}
+		Verified verified = client.validateCredentials(user.getUsername(), plainPassword);
 		Boolean isValid = verified.getVerified();
 //        boolean isValid = passwordHashProvider.verify(cred.getChallengeResponse(), passwordCredentialModel);
+
+		// In house validation
+		String password = "1234567";
+		String hash = "$2y$10$1/xlmIBAoz1SMgMTyAtr8eKhE33Truhg/t5xjic6VXclhgfEINv4i";
+		BCrypt.Result result = BCrypt.verifyer().verify(password.toCharArray(), hash);
+		log.info("RESULT ID {} ", result.toString());
 
 		log.info("Password validation result: {}", isValid);
 		return isValid;
@@ -131,8 +144,6 @@ public class PeanutsUserProvider implements UserStorageProvider,
 		UserModel adapter = loadedUsers.get(identifier);
 		if (adapter == null) {
 			try {
-				// TODO user cache
-				session.userCache();
 				User user = client.getUserById(identifier, filterBy);
 				adapter = new UserAdapter(session, realm, model, user);
 				loadedUsers.put(identifier, adapter);

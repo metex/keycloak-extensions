@@ -10,7 +10,7 @@ public class User {
 	private String firstname;
 	private String lastname;
 	private String email;
-	private String password;
+//	private String password;
 	private Boolean verified;
 	private Boolean active;
 	private String lang;
