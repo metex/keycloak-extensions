@@ -1,6 +1,7 @@
 package com.skoiy.keycloak;
 
 import com.skoiy.keycloak.external.User;
+import lombok.extern.slf4j.Slf4j;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
@@ -8,11 +9,13 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
+import org.keycloak.storage.federated.UserAttributeFederatedStorage;
 
 import java.util.List;
 import java.util.Map;
 
-public class UserAdapter extends AbstractUserAdapterFederatedStorage {
+@Slf4j
+public class UserAdapter extends AbstractUserAdapterFederatedStorage  {
 
     private final User user;
     private final String keycloakId;
@@ -49,9 +52,7 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
 	}
 
 		@Override
-    public void setEmail(String email) {
-        user.setEmail(email);
-    }
+    public void setEmail(String email) { user.setEmail(email); }
 
     @Override
     public String getFirstName() {
@@ -73,6 +74,31 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
         user.setLastname(lastName);
     }
 
+		public String getGender() {
+		return user.getGender();
+	}
+
+		public void setGender(String gender) {
+		user.setGender(gender);
+	}
+
+	////////////////////////////////////
+		@Override
+		public void setAttribute(String name, List<String> values) {
+			log.info("setAttribute {} {}", name, values.toString());
+			if (UserModel.USERNAME.equals(name)) {
+				setUsername((values != null && values.size() > 0) ? values.get(0) : null);
+			} else if(name.equals("gender")){
+				log.info("SetGender");
+				setGender("b1");
+				getFederatedStorage().setAttribute(realm, this.getId(), mapAttribute(name), values);
+			}else {
+				log.info("getFederatedStorage {} ", getFederatedStorage().toString());
+				getFederatedStorage().setAttribute(realm, this.getId(), mapAttribute(name), values);
+			}
+		}
+		////////////////////////////////////
+
     @Override
     public Map<String, List<String>> getAttributes() {
         MultivaluedHashMap<String, String> attributes = new MultivaluedHashMap<>();
@@ -85,5 +111,4 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
         attributes.add("gender", user.getGender());
         return attributes;
     }
-
 }

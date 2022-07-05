@@ -6,24 +6,25 @@ import com.skoiy.keycloak.external.User;
 import com.skoiy.keycloak.external.UsersClientSimpleHttp;
 import com.skoiy.keycloak.external.Verified;
 import lombok.extern.slf4j.Slf4j;
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.credential.hash.PasswordHashProvider;
+import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.models.*;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.storage.user.UserLookupProvider;
-import org.keycloak.storage.user.UserQueryProvider;
-import org.keycloak.storage.user.UserRegistrationProvider;
+import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
+import org.keycloak.storage.federated.UserAttributeFederatedStorage;
+import org.keycloak.storage.user.*;
 
 import javax.ws.rs.WebApplicationException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 
 /**
@@ -32,7 +33,10 @@ import java.util.stream.Stream;
 @Slf4j
 public class PeanutsUserProvider implements UserStorageProvider,
 	UserLookupProvider.Streams, UserQueryProvider.Streams,
-	CredentialInputUpdater, CredentialInputValidator, UserRegistrationProvider {
+	CredentialInputUpdater, CredentialInputValidator,
+	UserRegistrationProvider
+	/*ImportSynchronization,
+	UserAttributeFederatedStorage*/ {
 
 	private final KeycloakSession session;
 	private final ComponentModel model;
@@ -104,7 +108,25 @@ public class PeanutsUserProvider implements UserStorageProvider,
 		log.info("RESULT ID {} ", result.toString());
 
 		log.info("Password validation result: {}", isValid);
+
+		// Remove tenant_id user attribute
+		final AuthorizationProvider authorizationProvider = this.session.getProvider(AuthorizationProvider.class);
+		user.removeAttribute("tenant_id");
 		return isValid;
+	}
+
+	protected UserModel createAdapter(RealmModel realm, String username) {
+		return new AbstractUserAdapterFederatedStorage(session, realm, model) {
+			@Override
+			public String getUsername() {
+				return username;
+			}
+
+			@Override
+			public void setUsername(String username) {
+				log.info("Settingusername");
+			}
+		};
 	}
 
 	@Override
@@ -141,19 +163,46 @@ public class PeanutsUserProvider implements UserStorageProvider,
 	}
 
 	private UserModel findUser(RealmModel realm, String identifier, String filterBy) {
+		log.info("findUser: {}", identifier);
 		UserModel adapter = loadedUsers.get(identifier);
+
+		UserAdapter adapter2 = null;
 		if (adapter == null) {
 			try {
 				User user = client.getUserById(identifier, filterBy);
 				adapter = new UserAdapter(session, realm, model, user);
+				//adapter = createAdapter(realm, user.getUsername()); // new line
 				loadedUsers.put(identifier, adapter);
+				//session.userLocalStorage().addUser(realm, user.getUsername()); // new line
 			} catch (WebApplicationException e) {
 				log.warn("User with identifier '{}' could not be found, response from server: {}", identifier, e.getResponse().getStatus());
 			}
 		} else {
+
+			UserModel local = session.userLocalStorage().getUserByUsername(realm, adapter.getUsername()); // new line
+			if (local == null) {
+				log.info("AdapterId1 {}.", adapter.getUsername());
+			}
+
+			local = session.userLocalStorage().getUserByEmail(realm, adapter.getEmail()); // new line
+			if (local == null) {
+				log.info("AdapterId2 {}.", adapter.getEmail());
+			}
+
+			local = session.userLocalStorage().getUserById(realm, adapter.getId()); // new line
+			if (local == null) {
+				log.info("AdapterId3 {}.", adapter.getId());
+			}
+//			adapter.setSingleAttribute("gender", "b");
+//			log.info("Storage {}.", local.getAttributes().toString());
+			adapter2 = (UserAdapter) loadedUsers.get(identifier);
+			log.info("Gender {}.", adapter2.getGender());
+			//adapter2.setGender("b");
+			//adapter2.setSingleAttribute("gender", "b1"); // persist on keycloak database
 			log.info("Found user data for {} in loadedUsers.", identifier);
 		}
-		return adapter;
+
+		return adapter2 != null ? adapter2 : adapter;
 	}
 
 	@Override
@@ -206,4 +255,44 @@ public class PeanutsUserProvider implements UserStorageProvider,
 		log.info("removeUser, realm {} username {}", realm, user.getUsername());
 		return false;
 	}
+/*
+	@Override
+	public SynchronizationResult sync(KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model) {
+		log.info("SynchronizationResult");
+		return null;
+	}
+
+	@Override
+	public SynchronizationResult syncSince(Date lastSync, KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model) {
+		log.info("syncSince");
+		return null;
+	}
+
+	@Override
+	public void setSingleAttribute(RealmModel realm, String userId, String name, String value) {
+		log.info("setSingleAttribute");
+	}
+
+	@Override
+	public void setAttribute(RealmModel realm, String userId, String name, List<String> values) {
+		log.info("setAttribute");
+	}
+
+	@Override
+	public void removeAttribute(RealmModel realm, String userId, String name) {
+		log.info("removeAttribute");
+	}
+
+	@Override
+	public MultivaluedHashMap<String, String> getAttributes(RealmModel realm, String userId) {
+		log.info("getAttributes");
+		return null;
+	}
+
+	@Override
+	public List<String> getUsersByUserAttribute(RealmModel realm, String name, String value) {
+		log.info("getUsersByUserAttribute");
+		return null;
+	}
+	*/
 }

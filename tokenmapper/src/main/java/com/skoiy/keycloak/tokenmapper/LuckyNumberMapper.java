@@ -94,17 +94,4 @@ public class LuckyNumberMapper extends AbstractOIDCProtocolMapper
 		setClaim(token, mappingModel, userSession, keycloakSession, clientSessionCtx);
 		return token;
 	}
-
-	public static ProtocolMapperModel create(String name,
-																					 boolean accessToken, boolean idToken, boolean userInfo) {
-		ProtocolMapperModel mapper = new ProtocolMapperModel();
-		mapper.setName(name);
-		mapper.setProtocolMapper(PROVIDER_ID);
-		mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-		Map<String, String> config = new HashMap<String, String>();
-		config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
-		config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
-		mapper.setConfig(config);
-		return mapper;
-	}
 }
