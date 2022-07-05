@@ -1,0 +1,2 @@
+com.skoiy.keycloak.tokenmapper.LuckyNumberMapper
+com.skoiy.keycloak.tokenmapper.CustomClaimMapper

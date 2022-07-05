@@ -14,7 +14,10 @@
 		<module>user-provider</module>
 		<module>hash-provider</module>
 		<module>rest-endpoint</module>
-	</modules>
+		<module>tokenmapper</module>
+		<module>required-action</module>
+		<module>authenticator</module>
+    </modules>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
