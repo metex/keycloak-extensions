@@ -21,7 +21,7 @@ import javax.ws.rs.WebApplicationException;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class PeanutsUserProviderTest {
+public class ExternalUserProviderTest {
 
 	static final String REALM = "peanuts";
 	static Network network = Network.newNetwork();
@@ -130,7 +130,7 @@ public class PeanutsUserProviderTest {
 	public void testValidateCredentials() {
 		Object obj = new Object() {
 			public final String username = "admin";
-			public final String password = "1234567";
+			public final String password = "secret";
 		};
 
 		String url = String.format("%s/validate", baseUrl);

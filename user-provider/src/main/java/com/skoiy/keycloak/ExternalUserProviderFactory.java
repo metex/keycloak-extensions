@@ -8,16 +8,13 @@ import org.keycloak.storage.UserStorageProviderFactory;
 
 import java.util.List;
 
-/**
- * @author Niko Köbler, http://www.n-k.de, @dasniko
- */
-public class PeanutsUserProviderFactory implements UserStorageProviderFactory<PeanutsUserProvider> {
+public class ExternalUserProviderFactory implements UserStorageProviderFactory<ExternalUserProvider> {
 
-	public static final String PROVIDER_ID = "peanuts-user-provider";
+	public static final String PROVIDER_ID = "external-user-provider";
 
 	@Override
-	public PeanutsUserProvider create(KeycloakSession session, ComponentModel model) {
-		return new PeanutsUserProvider(session, model);
+	public ExternalUserProvider create(KeycloakSession session, ComponentModel model) {
+		return new ExternalUserProvider(session, model);
 	}
 
 	@Override

@@ -88,11 +88,7 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage  {
 			log.info("setAttribute {} {}", name, values.toString());
 			if (UserModel.USERNAME.equals(name)) {
 				setUsername((values != null && values.size() > 0) ? values.get(0) : null);
-			} else if(name.equals("gender")){
-				log.info("SetGender");
-				setGender("b1");
-				getFederatedStorage().setAttribute(realm, this.getId(), mapAttribute(name), values);
-			}else {
+			} else {
 				log.info("getFederatedStorage {} ", getFederatedStorage().toString());
 				getFederatedStorage().setAttribute(realm, this.getId(), mapAttribute(name), values);
 			}

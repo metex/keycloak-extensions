@@ -52,7 +52,7 @@ public class DemoRestProvider implements RealmResourceProvider {
 
 		AuthenticationManager.AuthResult auth = checkAuth();
 
-		auth.getSession().getUser().setSingleAttribute("hello", "world2");
+		auth.getSession().getUser().setSingleAttribute("tenant_id", "5");
 
 		return Response.ok(Map.of("hello", auth.getUser().getUsername())).build();
 	}

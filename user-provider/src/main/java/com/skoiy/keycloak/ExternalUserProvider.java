@@ -25,13 +25,14 @@ import org.keycloak.storage.user.*;
 
 import javax.ws.rs.WebApplicationException;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  * @author Niko Köbler, http://www.n-k.de, @dasniko
  */
 @Slf4j
-public class PeanutsUserProvider implements UserStorageProvider,
+public class ExternalUserProvider implements UserStorageProvider,
 	UserLookupProvider.Streams, UserQueryProvider.Streams,
 	CredentialInputUpdater, CredentialInputValidator,
 	UserRegistrationProvider
@@ -43,7 +44,7 @@ public class PeanutsUserProvider implements UserStorageProvider,
 	private final UsersClientSimpleHttp client;
 	protected Map<String, UserModel> loadedUsers = new HashMap<>();
 
-	public PeanutsUserProvider(KeycloakSession session, ComponentModel model) {
+	public ExternalUserProvider(KeycloakSession session, ComponentModel model) {
 		this.session = session;
 		this.model = model;
 		this.client = new UsersClientSimpleHttp(session, model);
@@ -77,42 +78,52 @@ public class PeanutsUserProvider implements UserStorageProvider,
 				return false;
 			}
 		} catch (WebApplicationException e) {
-			log.error(String.format("Request to verify credentials for userId %s failed with response status %d",
+				log.error(String.format("Request to verify credentials for userId %s failed with response status %d",
 				user.getId(), e.getResponse().getStatus()), e);
 			return false;
 		}
 
 		String plainPassword = input.getChallengeResponse();
-		//log.info("PLAIN PASSWORD {} ",input.getChallengeResponse());
-		UserCredentialModel cred = (UserCredentialModel) input;
-		//log.info("PLAIN PASSWORD {} ", cred.getValue());
-		PasswordCredentialModel passwordCredentialModel = credentialData.toPasswordCredentialModel();
-		// log.info("PLAIN PASSWORD {} ", passwordCredentialModel.getSecretData()); // its the {"value":"$2y$10$1/xlmIBAoz1SMgMTyAtr8eKhE33Truhg/t5xjic6VXclhgfEINv4i","salt":"salt","additionalParameters":{}}
 
-		PasswordHashProvider passwordHashProvider = session.getProvider(PasswordHashProvider.class, credentialData.getAlgorithm());
-
+		log.info("Verifying {}", user.getUsername());
 		// Make an HTTP request to validate the data
-		String resource = this.session.getContext().getClient().getClientId();
-		log.info("CLIENT ID {} ", resource);
-		log.info("USERNAME {} ", user.getUsername());
-		log.info("PASSWORD {} ", passwordCredentialModel.getPasswordSecretData().getValue());
-		String hashedPassword = passwordCredentialModel.getPasswordSecretData().getValue(); // retrieved from from the {"value":"$2y$10$1/xlmIBAoz1SMgMTyAtr8eKhE33Truhg/t5xjic6VXclhgfEINv4i","salt":"salt","additionalParameters":{}
 		Verified verified = client.validateCredentials(user.getUsername(), plainPassword);
-		Boolean isValid = verified.getVerified();
-//        boolean isValid = passwordHashProvider.verify(cred.getChallengeResponse(), passwordCredentialModel);
+		if (verified.getVerified()) {
+			log.info("User {}", verified);
+			addToStorage(realm, user.getUsername(), verified);
+		}
+		return verified.getVerified();
+	}
 
-		// In house validation
-		String password = "1234567";
-		String hash = "$2y$10$1/xlmIBAoz1SMgMTyAtr8eKhE33Truhg/t5xjic6VXclhgfEINv4i";
-		BCrypt.Result result = BCrypt.verifyer().verify(password.toCharArray(), hash);
-		log.info("RESULT ID {} ", result.toString());
+	private void addToStorage(RealmModel realm, String username, Verified user) {
+		UserModel local = session.userLocalStorage().getUserByUsername(realm, username);
+		log.info("local ======>" + local);
+		if (local == null) {
+			local = session.userLocalStorage().addUser(realm, username);
+			local.setFederationLink(model.getId());
+			local.setEnabled(true);
+			local.setEmailVerified(true);
+			log.info("User {}", user.toString());
+			local.setFirstName(user.getData().getFirstname());
+			local.setLastName(user.getData().getLastname());
+			local.setEmail(user.getData().getEmail());
 
-		log.info("Password validation result: {}", isValid);
-
-		// Remove tenant_id user attribute
-		final AuthorizationProvider authorizationProvider = this.session.getProvider(AuthorizationProvider.class);
-		user.removeAttribute("tenant_id");
-		return isValid;
+			local.setSingleAttribute("id", user.getData().getId_user());
+			local.setSingleAttribute("user_token", user.getData().getUser_token());
+			local.setSingleAttribute("verified", user.getData().getVerified().toString());
+			local.setSingleAttribute("active", user.getData().getActive().toString());
+			local.setSingleAttribute("lang", user.getData().getLang());
+			local.setSingleAttribute("updated_at", user.getData().getUpdated_at());
+			local.setSingleAttribute("created_at", user.getData().getCreated_at());
+			local.setSingleAttribute("register_Date", user.getData().getRegister_Date());
+			local.setSingleAttribute("remember_token", user.getData().getRemember_token());
+			local.setSingleAttribute("birthday", user.getData().getBirthday());
+			local.setSingleAttribute("gender", user.getData().getGender());
+			//local.grantRole(realm.getRole("admin"));// here you need to added what do you want...
+			//local.grantRole(realm.getRole("create-realm"));// here you need to added what do you want...
+			log.info("added to local <======");
+			session.userCache().clear();
+		}
 	}
 
 	protected UserModel createAdapter(RealmModel realm, String username) {
@@ -226,7 +237,8 @@ public class PeanutsUserProvider implements UserStorageProvider,
 	public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params, Integer firstResult, Integer maxResults) {
 		// When clicking in the "View all users" button without any filter
 		log.info("searchForUserStream2, params={}, first={}, max={}", params, firstResult, maxResults);
-		return toUserModelStream(client.getUsers(null, firstResult, maxResults), realm);
+		return UserCache.findUsers("").stream().map(user -> new UserAdapter(session, realm, model, user));
+//		return toUserModelStream(client.getUsers(null, firstResult, maxResults), realm);
 	}
 
 	private Stream<UserModel> toUserModelStream(List<User> users, RealmModel realm) {
